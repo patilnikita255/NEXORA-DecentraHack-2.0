@@ -1,0 +1,48 @@
+module:
+  id: module_03_intrusion
+  name: Intrusion & Unauthorized Access Monitoring
+  version: 1.0.0
+model:
+  path: models/checkpoints/yolo11n.pt
+  input_size: 640
+  confidence_threshold: 0.5
+  iou_threshold: 0.5
+  person_class_id: 0
+tracking:
+  enabled: true
+  tracker: bytetrack.yaml
+  max_age: 30
+zones:
+  restricted_zones:
+  - name: Restricted Zone 1
+    polygon:
+    - - 1438
+      - 154
+    - - 1835
+      - 149
+    - - 1838
+      - 849
+    - - 1449
+      - 854
+  tripwires:
+  - name: Main Entrance Tripwire
+    line:
+    - - 1194
+      - 156
+    - - 1215
+      - 894
+schedule:
+  enabled: false
+  restricted_start: '22:00'
+  restricted_end: 06:00
+event:
+  minimum_frames: 5
+  loitering_seconds: 30
+  cooldown_seconds: 10
+evidence:
+  save_frame: true
+  save_clip: true
+  pre_event_seconds: 5
+  post_event_seconds: 5
+output:
+  format: json

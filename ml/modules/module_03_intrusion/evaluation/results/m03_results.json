@@ -1,0 +1,43 @@
+{
+  "module": {
+    "id": "module_03_intrusion",
+    "name": "Intrusion & Unauthorized Access Monitoring"
+  },
+  "evaluation_type": "ground_truth_detection_only",
+  "video": {},
+  "pipeline": {},
+  "events": {
+    "total": null
+  },
+  "incidents": {
+    "total": null
+  },
+  "detection_metrics": {
+    "status": "AVAILABLE",
+    "images_evaluated": 30,
+    "ground_truth_persons": 100,
+    "predicted_persons": 199,
+    "true_positives_iou50": 92,
+    "false_positives_iou50": 107,
+    "false_negatives_iou50": 8,
+    "precision": 0.4623,
+    "recall": 0.92,
+    "f1": 0.6154,
+    "map50": 0.626,
+    "map50_95": 0.3202,
+    "iou_threshold_for_pr_f1": 0.5,
+    "confidence_threshold": 0.5
+  },
+  "tracking_metrics": {
+    "id_switches": null,
+    "status": "NOT_AVAILABLE",
+    "reason": "Ground-truth tracking annotations are required."
+  },
+  "operational_metrics": {
+    "false_alerts": null,
+    "missed_events": null,
+    "false_alerts_per_camera_hour": null,
+    "status": "NOT_AVAILABLE",
+    "reason": "Human-reviewed ground-truth event labels are required."
+  }
+}
