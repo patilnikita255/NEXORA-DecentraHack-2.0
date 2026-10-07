@@ -5,7 +5,12 @@ NEXORA is an intelligent monitoring platform designed to combine computer vision
 The project is being developed as a modular platform where individual AI-based monitoring capabilities can be developed and integrated independently.
 
 The current project contains the core frontend and backend structure along with the implementation of Module 03 — Intrusion & Unauthorized Access Monitoring.
+## Project Team
 
+- **Nikita Patil** — Project submission, integration, and demonstration.
+- **Vijay Patil** — Original NEXORA project and Module 3 intrusion-monitoring implementation.
+
+*Update these descriptions to reflect each person's actual contributions. Preserve all required third-party attribution and license notices.*
 ## Project Overview
 
 NEXORA follows this workflow:
