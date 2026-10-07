@@ -5,12 +5,52 @@ NEXORA is an intelligent monitoring platform designed to combine computer vision
 The project is being developed as a modular platform where individual AI-based monitoring capabilities can be developed and integrated independently.
 
 The current project contains the core frontend and backend structure along with the implementation of Module 03 — Intrusion & Unauthorized Access Monitoring.
+
+
+## AI Modules
+
+NEXORA is designed around six AI monitoring modules. Their codebases and setup instructions are maintained in individual repositories.
+
+The master repository provides the current NEXORA application and links to the individual module projects. The six modules are not all integrated into a single runtime.
+
+See the [AI Modules Directory](modules/README.md) for module descriptions, repository links, and implementation status.
+
+| Module | Capability | Documentation |
+|---|---|---|
+| M1 | Dangerous Object Detection | [Module 1](modules/M1-dangerous-object.md) |
+| M2 | Person, Face & Activity Detection | [Module 2](modules/M2-person-face-activity.md) |
+| M3 | Intrusion & Unauthorized Access Monitoring | [Module 3](modules/M3-intrusion.md) |
+| M4 | Electricity & Energy Wastage Detection | [Module 4](modules/M4-energy.md) |
+| M5 | PPE & Workplace Safety Monitoring | [Module 5](modules/M5-ppe-safety.md) |
+| M6 | Child, Elderly & Vulnerable-Person Safety | [Module 6](modules/M6-vulnerable-person-safety.md) |
+
+**Note:** Module capabilities and integration status should be verified against each implementation. Module 6's repository link is pending.
+
+
 ## Project Team
 
 - **Nikita Patil** — Project submission, integration, and demonstration.
 - **Vijay Patil** — Original NEXORA project and Module 3 intrusion-monitoring implementation.
 
 *Update these descriptions to reflect each person's actual contributions. Preserve all required third-party attribution and license notices.*
+
+
+## AI Modules
+
+NEXORA is organized around six AI monitoring modules. Each module is maintained in its respective repository, with its own implementation and setup instructions.
+
+The main repository provides the NEXORA application and documents the individual module projects. **The modules are not all fully integrated into a single runtime.** Refer to each module's documentation for its implementation status and execution instructions.
+
+| Module | Description | Documentation |
+|---|---|---|
+| M1 | Dangerous Object Detection | [View module](modules/M1-dangerous-object.md) |
+| M2 | Person, Face & Activity Detection | [View module](modules/M2-person-face-activity.md) |
+| M3 | Intrusion Monitoring | [View module](modules/M3-intrusion.md) |
+| M4 | Energy Monitoring | [View module](modules/M4-energy.md) |
+| M5 | PPE & Workplace Safety | [View module](modules/M5-ppe-safety.md) |
+| M6 | Vulnerable-Person Safety | [View module](modules/M6-vulnerable-person-safety.md) |
+
+See the [AI Modules Directory](modules/README.md) for repository links and individual project documentation.
 ## Project Overview
 
 NEXORA follows this workflow:
