@@ -13,6 +13,15 @@ tracking:
   tracker: bytetrack.yaml
   max_age: 30
 zones:
+  # All polygon/line coordinates below are authored against this
+  # reference resolution (the original test.mp4 was 1920x1080).
+  # IntrusionPipeline.configure_zones_for_resolution() scales them to
+  # whatever resolution the actual uploaded video has, so the same
+  # coordinates below work correctly at any input resolution.
+  # If this key is omitted, 1920x1080 is assumed (backward compatible).
+  reference_resolution:
+    width: 1920
+    height: 1080
   restricted_zones:
   - name: Restricted Zone 1
     polygon:

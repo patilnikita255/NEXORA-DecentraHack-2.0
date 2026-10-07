@@ -1,3 +1,4 @@
+import copy
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,7 +50,25 @@ class IntrusionPipeline:
         - Standard NEXORA incident object
         - PENDING review status
         - Human review fields
+
+    Resolution handling:
+        Restricted-zone polygons and tripwire lines in config.yaml
+        are authored against a reference resolution (zones.
+        reference_resolution, defaulting to 1920x1080 for backward
+        compatibility with the original configuration). Call
+        configure_zones_for_resolution(width, height) once the actual
+        video's dimensions are known (done automatically inside
+        process_video(), and must be called explicitly by any caller
+        that drives process_frame() directly, such as a websocket
+        handler). Both the overlay drawing code and the rule engine
+        read from self.scaled_zones, so detection and visualization
+        always agree.
     """
+
+    DEFAULT_REFERENCE_RESOLUTION = {
+        "width": 1920,
+        "height": 1080,
+    }
 
     def __init__(self, config_path: str):
         self.config_path = Path(
@@ -70,6 +89,32 @@ class IntrusionPipeline:
         self.rule_engine = IntrusionRuleEngine(
             self.config
         )
+
+        # ----------------------------------------------------------
+        # Resolution-independent zones/tripwires
+        # ----------------------------------------------------------
+        #
+        # self.scaled_zones starts as an unscaled copy of the raw
+        # config so drawing/rules always have something valid to read
+        # even before configure_zones_for_resolution() has run for a
+        # given video. It is replaced with a properly scaled copy as
+        # soon as the actual video resolution is known.
+
+        zones_config = self.config.get(
+            "zones",
+            {}
+        )
+
+        self.reference_resolution = zones_config.get(
+            "reference_resolution",
+            dict(self.DEFAULT_REFERENCE_RESOLUTION),
+        )
+
+        self.scaled_zones = copy.deepcopy(
+            zones_config
+        )
+
+        self.current_resolution = None
 
         # ----------------------------------------------------------
         # Incident manager
@@ -202,6 +247,137 @@ class IntrusionPipeline:
         self.pre_event_buffer = deque()
 
         self.pending_evidence = []
+
+    # ==========================================================
+    # RESOLUTION-INDEPENDENT ZONES/TRIPWIRES
+    # ==========================================================
+
+    def configure_zones_for_resolution(
+        self,
+        video_width: int,
+        video_height: int,
+    ):
+        """
+        Scale restricted-zone polygons and tripwire lines from the
+        configured reference resolution to the actual video's
+        resolution, and push the result into both:
+
+          - self.scaled_zones (read by _draw_restricted_zones /
+            _draw_tripwires for the visual overlay)
+          - self.rule_engine (read by check_detection /
+            check_tripwires for actual intrusion logic)
+
+        so the overlay and the rule engine always agree.
+
+        Coordinates are scaled independently per axis:
+
+            scaled_x = original_x * video_width / reference_width
+            scaled_y = original_y * video_height / reference_height
+
+        This is correct (no letterbox-offset correction needed)
+        because YOLO inference results (boxes.xyxy) are returned by
+        Ultralytics already rescaled back to the native, unpadded
+        frame — the same frame used for drawing and evidence. There
+        is no letterboxing anywhere in this pipeline's own frame
+        handling for us to compensate for.
+
+        Safe to call every frame: it is a no-op (returns immediately)
+        once already configured for the given (width, height) pair,
+        so logging only happens once per resolution change.
+        """
+
+        resolution_key = (
+            int(video_width),
+            int(video_height),
+        )
+
+        if resolution_key == self.current_resolution:
+            return
+
+        ref_width = float(
+            self.reference_resolution.get(
+                "width",
+                self.DEFAULT_REFERENCE_RESOLUTION["width"],
+            )
+        )
+
+        ref_height = float(
+            self.reference_resolution.get(
+                "height",
+                self.DEFAULT_REFERENCE_RESOLUTION["height"],
+            )
+        )
+
+        scale_x = video_width / ref_width
+        scale_y = video_height / ref_height
+
+        raw_zones = self.config.get(
+            "zones",
+            {}
+        )
+
+        scaled = copy.deepcopy(raw_zones)
+
+        for zone in scaled.get("restricted_zones", []):
+
+            zone["polygon"] = [
+                [
+                    round(x * scale_x),
+                    round(y * scale_y),
+                ]
+                for x, y in zone.get("polygon", [])
+            ]
+
+        for tripwire in scaled.get("tripwires", []):
+
+            tripwire["line"] = [
+                [
+                    round(x * scale_x),
+                    round(y * scale_y),
+                ]
+                for x, y in tripwire.get("line", [])
+            ]
+
+        self.scaled_zones = scaled
+        self.current_resolution = resolution_key
+
+        # Rule engine and drawing now read the same scaled coordinates.
+        self.rule_engine.update_zones(scaled)
+
+        # ------------------------------------------------------
+        # Logging (once per resolution change only)
+        # ------------------------------------------------------
+
+        print(
+            f"[M03] Original frame resolution: "
+            f"{video_width} x {video_height}"
+        )
+
+        print(
+            f"[M03] Reference zone resolution: "
+            f"{int(ref_width)} x {int(ref_height)}"
+        )
+
+        print(
+            f"[M03] Scale factors: "
+            f"x={scale_x:.4f}, y={scale_y:.4f}"
+        )
+
+        for tripwire in scaled.get("tripwires", []):
+
+            print(
+                f"[M03] Scaled tripwire "
+                f"'{tripwire.get('name')}': "
+                f"{tripwire.get('line')}"
+            )
+
+        for zone in scaled.get("restricted_zones", []):
+
+            print(
+                f"[M03] Scaled zone "
+                f"'{zone.get('name')}': "
+                f"{zone.get('polygon')}"
+            )
 
     # ==========================================================
     # FRAME PROCESSING
@@ -457,6 +633,14 @@ class IntrusionPipeline:
             )
         )
 
+        # ------------------------------------------------------
+        # Scale zones/tripwires to this video's actual resolution
+        # ------------------------------------------------------
+
+        self.configure_zones_for_resolution(
+            video_width,
+            video_height,
+        )
 
         # ------------------------------------------------------
         # Annotated output video
@@ -1215,8 +1399,7 @@ class IntrusionPipeline:
     ):
 
         zones = (
-            self.config
-            .get("zones", {})
+            self.scaled_zones
             .get(
                 "restricted_zones",
                 []
@@ -1302,8 +1485,7 @@ class IntrusionPipeline:
     ):
 
         tripwires = (
-            self.config
-            .get("zones", {})
+            self.scaled_zones
             .get(
                 "tripwires",
                 []

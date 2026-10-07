@@ -35,6 +35,20 @@ class IntrusionRuleEngine:
         )
 
         # ------------------------------------------------------
+        # Zones/tripwires used for rule evaluation
+        # ------------------------------------------------------
+        #
+        # Starts as the raw, unscaled config (same as the original
+        # behavior). IntrusionPipeline.configure_zones_for_resolution()
+        # replaces this via update_zones() once the actual video
+        # resolution is known, so the rule engine always evaluates
+        # against the SAME scaled coordinates the overlay draws.
+        self.zones_config = config.get(
+            "zones",
+            {}
+        )
+
+        # ------------------------------------------------------
         # Unique event sequence
         # ------------------------------------------------------
         #
@@ -74,6 +88,22 @@ class IntrusionRuleEngine:
         self.last_tripwire_events = {}
 
     # ==========================================================
+    # ZONE/TRIPWIRE CONFIGURATION
+    # ==========================================================
+
+    def update_zones(self, zones_config: dict):
+        """
+        Replace the zones/tripwires used for rule evaluation.
+
+        Called by IntrusionPipeline.configure_zones_for_resolution()
+        once the actual video resolution is known, so detection logic
+        and the drawn overlay always agree on where zones/tripwires
+        actually are.
+        """
+
+        self.zones_config = zones_config
+
+    # ==========================================================
     # RESTRICTED ZONE
     # ==========================================================
 
@@ -100,12 +130,7 @@ class IntrusionRuleEngine:
             detection["bbox"]
         )
 
-        zone_config = self.config.get(
-            "zones",
-            {}
-        )
-
-        restricted_zones = zone_config.get(
+        restricted_zones = self.zones_config.get(
             "restricted_zones",
             []
         )
@@ -313,10 +338,9 @@ class IntrusionRuleEngine:
             current_detection["bbox"]
         )
 
-        tripwires = (
-            self.config
-            .get("zones", {})
-            .get("tripwires", [])
+        tripwires = self.zones_config.get(
+            "tripwires",
+            []
         )
 
         events = []
@@ -765,6 +789,9 @@ class IntrusionRuleEngine:
             ],
             "track_id": detection.get(
                 "track_id"
+            ),
+            "frame_id": detection.get(
+                "frame_id"
             ),
             "timestamp": timestamp.isoformat(),
             "confidence": detection[
